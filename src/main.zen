@@ -1,0 +1,30 @@
+const std = @import("std");
+
+export var parambuf: [1024]u8 = undefined;
+export const parambuflen = parambuf.len;
+
+extern fn al(n: i32) void;
+extern fn setHTML(len: i32) void;
+extern fn appendDOM(len: i32) void;
+
+fn wasm_appendDOM(s: []u8) void {
+  std.mem.copy(u8, &mut parambuf, s);
+  appendDOM(@intCast(i32, s.len));
+}
+fn wasm_setHTML(s: []u8) void {
+  std.mem.copy(u8, &mut parambuf, s);
+  setHTML(@intCast(i32, s.len));
+}
+
+export fn main(len: i32) i32 {
+  var n : i32 = 0;
+  const zenbuf = parambuf[0..@intCast(usize, len)];
+  for (zenbuf) |c| {
+    n += @intCast(i32, c);
+  }
+  al(n);
+  wasm_setHTML("DOM controlled by Zen language!");
+  wasm_appendDOM("<div style='background:gray;display:inline-block;color:white;padding:1em'>Zen</div>");
+  wasm_appendDOM("<div style='background:black;display:inline-block;color:white;padding:1em'>Zen</div>");
+  return n;
+}

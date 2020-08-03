@@ -1,0 +1,43 @@
+<script type="module">
+(async () => {
+  let setHTML = n => {};
+  let appendDOM = n => {};
+  const imports = {
+    al: n => alert(n),
+    setHTML: n => { setHTML(n) },
+    appendDOM: n => { appendDOM(n) },
+  };
+  const bin = await (await fetch("./main.wasm")).arrayBuffer();
+  const wasm = await WebAssembly.instantiate(bin, { env: imports });
+  const ex = wasm.instance.exports;
+  const ram = new Uint8Array(ex.memory.buffer, ex.parambuf, ex.parambuflen)
+
+  const len = 10;
+  for (let i = 0; i < 10; i++) {
+    ram[i] = i * i;
+  }
+  //ex.parambuflen = len; // NG read only
+
+  setHTML = len => {
+    // const len = ex.parambuflen.value;
+    console.log("paramlen", len);
+    const s = new TextDecoder().decode(ram);
+    main.innerHTML = s;
+  };
+  appendDOM = len => {
+    const buf = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      buf[i] = ram[i];
+    }
+    const s = new TextDecoder().decode(buf);
+    const div = document.createElement("div");
+    document.body.appendChild(div);
+    div.outerHTML = s;
+  } 
+  imports.al = n => alert(n);
+  console.log(ex);
+  ex.main(len);
+  //document.body.textContent = "WebAssembly in Zen, add(1,2) = " + sum();
+})();
+</script>
+<div id="main"></div>
